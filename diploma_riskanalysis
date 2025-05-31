@@ -1,0 +1,74 @@
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+df = pd.read_csv('fin_buncruptcy.csv', encoding='utf-8', sep=';')
+df.columns = df.columns.str.strip()
+
+print(df.head()) 
+
+X = df.drop('Bankruptcy', axis=1)
+y = df['Bankruptcy']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print('Точность модели:', accuracy)
+
+current_assets = float(input("Введите Current assets: ").replace(' ', ''))
+current_liabilities = float(input("Введите Current liabilities: ").replace(' ', ''))
+total_debt = float(input("Введите Total debt: ").replace(' ', ''))
+total_assets = float(input("Введите Total assets: ").replace(' ', ''))
+net_income = float(input("Введите Net income: ").replace(' ', ''))
+
+
+liquidity = current_assets / current_liabilities
+leverage = total_debt / total_assets
+roa = net_income / total_assets
+roe = net_income / (total_assets - total_debt)
+profitability = roa
+liquidity_threshold = 0.7
+leverage_threshold = 0.85  
+profitability_threshold = 0.02
+roa_threshold = 0.01
+roe_threshold = 0.07
+
+def check_risk(value, threshold, name, more_is_better=True):
+    if (more_is_better and value > threshold) or (not more_is_better and value < threshold):
+        percent_change = abs((value - threshold) / value) * 100
+        print(f"{name} is safe. It can decrease by {percent_change:.2f}% before reaching the risk zone.")
+    else:
+        print(f"Warning: {name} is already in the risk zone!")
+
+print("\n--- Risk Margin Analysis ---")
+check_risk(liquidity, liquidity_threshold, "Liquidity")
+check_risk(leverage, leverage_threshold, "Leverage", more_is_better=False)
+check_risk(profitability, profitability_threshold, "Profitability")
+check_risk(roa, roa_threshold, "ROA")
+check_risk(roe, roe_threshold, "ROE")
+
+
+
+print("\nCalculated Financial Ratios:")
+print(f"Liquidity: {liquidity}")
+print(f"Leverage: {leverage}")
+print(f"Profitability: {profitability}")
+print(f"ROA: {roa}")
+print(f"ROE: {roe}")
+
+
+new_data = pd.DataFrame({
+    'Liquidity': [1.2],
+    'Leverage': [0.9],
+    'Profitability': [0.15],
+    'ROA': [0.02],    
+    'ROE': [0.07]
+})
+
+prediction = model.predict(new_data)
+print('Bankruptcy:', 'Yes' if prediction[0] == 1 else 'No')
